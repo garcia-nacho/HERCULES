@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<script>
+  function resizeIframe(obj) {
+    obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 'px';
+  }
+</script>
+</head>
+
+<body>
+
+<h1>MST by Date</h1>
+
+<iframe src="./Widgets/MST_TotalFacet.html" title="TotalFacet" frameborder="0" height="1200px" width="100%", onload="resizeIframe(this)"></iframe>
+
+<h1>Total MST </h1>
+<iframe src="./Widgets/TotalMST.html" title="TotalFacet" frameborder="0" height="1200px" width="100%", onload="resizeIframe(this)"></iframe>
+
+<h1>Pango Lineage</h1>
+<iframe src="./Widgets/PangoLineageBarPlot.html" title="TotalFacet" frameborder="0" height="1200px" width="100%", onload="resizeIframe(this)"></iframe>
+
+
+</body>
+</html>
