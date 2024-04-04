@@ -128,7 +128,7 @@ do
     cat ${dir%/}_consensus.fa ${RefSpike} > spike.cons.fa
     
     source activate nextclade
-    nextclade --input-fasta spike.cons.fa --input-dataset /home/docker/nc_sars-cov-2 --output-csv dummy.csv --output-fasta spike.cons.aligned.fa
+    nextclade run --input-dataset /home/docker/nc_sars-cov-2 --output-csv dummy.csv --output-fasta spike.cons.aligned.fa spike.cons.fa
     conda deactivate
     #nextalign -i spike.cons.fa -o spike.cons.aligned.fa -r /home/docker/CommonFiles/reference/SpikeRef.fa
 

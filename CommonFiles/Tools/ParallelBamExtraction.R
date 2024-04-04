@@ -96,9 +96,9 @@ print(paste("Additional positions", poicurrent))
 out.par<-foreach(i=1:length(samples.to.analyze), .verbose=FALSE, .packages = c("data.table"), .options.snow = opts) %dopar%{
   
   system(paste("./bam2msa ", "./SpikeRef.fa ",bam.files[i]," Spike:", n.start,"-",n.end,
-             " | cut -f 1-2 > ", gsub(".*/","MSAFastas/",gsub(".bam","_b2f.tsv",bam.files[i])), sep = ""))
+             " | cut -f 1-2 > ", gsub(".*/","MSAFastas/",gsub(".bam",".b2f.tsv",bam.files[i])), sep = ""))
   
-  file.to.check<-fread(gsub(".*/","MSAFastas/",gsub(".bam","_b2f.tsv",bam.files[i])))
+  file.to.check<-fread(gsub(".*/","MSAFastas/",gsub(".bam",".b2f.tsv",bam.files[i])))
   file.to.check<-as.data.frame(file.to.check)
   for (j in 1:nrow(file.to.check)) {
     if(length(grep("-",file.to.check$ref_msa[j]))==1){
@@ -110,8 +110,8 @@ out.par<-foreach(i=1:length(samples.to.analyze), .verbose=FALSE, .packages = c("
       file.to.check$`#query_msa`[j]<-paste(qry, collapse="")
     }
   }
-  write.table(file.to.check,gsub(".*/","MSAFastas/",gsub(".bam","_b2f.tsv",bam.files[i])),sep = "\t", quote = FALSE, row.names = FALSE)
-  system(paste("gzip ",gsub(".*/","MSAFastas/",gsub(".bam","_b2f.tsv",bam.files[i])), sep = ""))
+  write.table(file.to.check,gsub(".*/","MSAFastas/",gsub(".bam",".b2f.tsv",bam.files[i])),sep = "\t", quote = FALSE, row.names = FALSE)
+  system(paste("gzip ",gsub(".*/","MSAFastas/",gsub(".bam",".b2f.tsv",bam.files[i])), sep = ""))
 }
 stopCluster(cluster.cores)
 }
@@ -1011,15 +1011,18 @@ saveWidget(partial_bundle(plty), paste("WWPlot_",experiments[i],"_lineages.html"
 }
 
 lineages.clean$Location<-gsub(".*_","",lineages.clean$Sample)
-lineages.clean$Date<-as.Date(gsub(".*\\.","",gsub("_.*","",lineages.clean$Sample)))
+lineages.clean$DateRaw<-as.Date(gsub(".*\\.","",gsub("_.*","",lineages.clean$Sample)))
 lineages.clean$Experiment<-gsub("\\..*","",lineages.clean$Sample)
 lineages.clean$Experiment<-toupper(lineages.clean$Experiment)
 
+lineages.clean$Date<-as.Date(paste(lineages.clean$Year,lineages.clean$Week, 1, sep="-"), "%Y-%U-%u")
+
 uniqueaa<-lineages.clean[-which(duplicated(lineages.clean$Mut.aa)),]
 
-lineages.clean$Year<-year(lineages.clean$Date)
-lineages.clean$Week<-week(lineages.clean$Date)
-
+#Weekly rolling
+lineages.clean$Year<-year(lineages.clean$DateRaw)
+lineages.clean$Week<-week(lineages.clean$DateRaw)
+lineages.clean$Date<-as.Date(paste(lineages.clean$Year,lineages.clean$Week, 1, sep="-"), "%Y-%U-%u")
 # ggplot(lineages.clean[-grep("Pos|Neg", lineages.clean$Sample),])+
 #   geom_point(aes(X,Y,col=Location,size=Ratio),alpha=0.3)+
 #   scale_colour_manual(values = rainbow(length(unique(lineages.clean$Location))))+
@@ -1045,6 +1048,7 @@ ptl2<- ggplotly(ggplot(lineages.clean)+
 saveWidget(partial_bundle(ptl2), "TotalLineageMap2.html")
 
 #Trelliscope
+library(trelliscopejs)
 ggplot(lineages.clean)+
   geom_jitter(aes(X,Y,col=Recompressed,size=Ratio, label=PangoDiscrepancies, text=Mut.aa2),alpha=0.3)+
   scale_colour_manual(values = rainbow(length(unique(lineages.clean$Recompressed))))+

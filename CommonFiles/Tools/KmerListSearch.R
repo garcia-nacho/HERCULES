@@ -28,21 +28,7 @@ for (i in 1:length(compressed)) {
   target.file<-gsub(".*/","kmeruncompressed/",gsub(".gz","",compressed[i]))
   if(file.exists(target.file)) file.remove(target.file)
   system(paste("gunzip -c ", compressed[i], " > ",target.file,sep = ""))
-  
-  file.to.check<-fread(target.file)
-  file.to.check<-as.data.frame(file.to.check)
-  for (j in 1:nrow(file.to.check)) {
-    if(length(grep("-",file.to.check$ref_msa[j]))==1){
-      ref<-unlist(strsplit(file.to.check$ref_msa[j],""))
-      qry<-unlist(strsplit(file.to.check$`#query_msa`[j],""))
-      qry<-qry[-which(ref=="-")]
-      ref<-ref[-which(ref=="-")]
-      file.to.check$ref_msa[j]<-paste(ref, collapse = "")
-      file.to.check$`#query_msa`[j]<-paste(qry, collapse="")
-    }
-  }
-  write.table(file.to.check,target.file,sep = "\t", quote = FALSE, row.names = FALSE)
-  
+
 }
 #Recompress db and save
 
@@ -107,14 +93,26 @@ dfunlist<-do.call(rbind, out.par)
 
 df.out<-dfunlist[-which(dfunlist$RatioReference>0.98),]
 
-df.out$Location<-gsub(".*_","",gsub(".*/","",gsub("_sorted.*","",df.out$files)))
+df.out$Location<-gsub(".*_","",gsub(".*/","",gsub(".sorted.*","",df.out$files)))
+
 df.out$Date<-as.Date(gsub(".*\\.","",gsub("_.*","",gsub(".*/","",gsub("_sorted.*","",df.out$files)))))
 df.out$Run<-gsub("\\..*","",gsub(".*/","",df.out$files))
 
 
+ggplot(df.out[which(df.out$Lineage=="XBB.2.3"),])+
+  geom_line(aes(Date, RatioQuery, group=kmer), alpha=0.2)+
+  theme_minimal()+
+  facet_wrap(~Location)
+
 ggplot(df.out[which(df.out$Lineage=="BA.2.86"),])+
   geom_line(aes(Date, RatioQuery, group=kmer), alpha=0.2)+
   theme_minimal()+
+  facet_wrap(~Location)
+
+ggplot(df.out[which(df.out$Lineage=="BH.1"),])+
+  geom_line(aes(Date, RatioQuery, group=kmer), alpha=0.2)+
+  theme_minimal()+
+  ylim(0,1)+
   facet_wrap(~Location)
 
 #file.remove(list.files("kmeruncompressed/",full.names = TRUE) )
@@ -122,8 +120,41 @@ ggplot(df.out[which(df.out$Lineage=="BA.2.86"),])+
 df.out$Sample<-gsub(".*/","",df.out$files)
 df.out$Sample<-gsub(".sorted.*","",df.out$Sample)
 
-write_xlsx(df.out, "KmerSearchResults.xlsx")
+#write_xlsx(df.out, "KmerSearchResults.xlsx")
 
 
+cov<-function(x){
+  return(sd(x,na.rm = TRUE)/mean(x,na.rm=TRUE))
+}
+
+out.agg<-aggregate(RatioQuery ~ Lineage + files, df.out, cov )
+
+out.agg$Location<-gsub(".*_","",gsub(".*/","",gsub(".sorted.*","",out.agg$files)))
+out.agg$Date<-as.Date(gsub(".*\\.","",gsub("_.*","",gsub(".*/","",gsub("_sorted.*","",out.agg$files)))))
+out.agg$Run<-gsub("\\..*","",gsub(".*/","",out.agg$files))
 
 
+ggplot(out.agg[which(out.agg$Location %in% c("Oslo","Ullensaker")),])+
+  geom_line(aes(Date,RatioQuery, col=Lineage))+
+  theme_minimal()+
+  scale_color_manual(values = rainbow(length(unique(out.agg$Lineage))))+
+  ylab("cov")+
+  facet_wrap(~Location)
+
+name.agg<-aggregate(RatioQuery~Lineage, out.agg, median)
+name.agg<-name.agg[order(name.agg$RatioQuery, decreasing = TRUE),]
+
+out.agg$Lineage<-factor(out.agg$Lineage, levels = name.agg$Lineage)
+
+ggplot(out.agg[which(out.agg$Location %in% c("Oslo","Ullensaker")),])+
+  geom_boxplot(aes(Lineage,RatioQuery))+
+  theme_minimal()+
+  ylab("cov")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggplot(out.agg[which(out.agg$Location %in% c("Oslo","Ullensaker")),])+
+  geom_bar(aes(Lineage,RatioQuery),stat="summary", fun="median", fill="red")+
+  geom_jitter(aes(Lineage,RatioQuery), alpha=0.1)+
+  theme_minimal()+
+  ylab("CoV")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
