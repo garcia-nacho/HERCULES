@@ -83,7 +83,12 @@ It is possible to integrate previous results of the pipeline to be analyzed agai
 To integrate the results of old analyses, a directory containing the files with the suffix *_b2f.tsv.gz* should be mapped into the /Previous folder of the docker container by using the following flag. 
 <code>-v Path/to/database:/Previous</code>
    
+## Use an alternative reference/nomenclature system for the lineages
+To update the set of references that HERCULES uses, you need a fasta file with all the Spike-genes of the reference sequences aligned. The names of the sequences inside the fasta file must have the following structure IDXX_LineageY where IDXX is the unique identifier for the sequence and the LineageY is the lineage assigned to the sequence, it can be pangolin lineage or any other nomenclature system (e.g. nextclade clade ID, WHO nomenclature, etc). The fasta file must be stored in a folder that must be mounted inside HERCULES with the following flag.   <code>-v Path/to/Folder:/Reference</code>   
    
+If no database is provide, HERCULES will use a precomputed internal one. Depending on the size of the fasta file, computing the reference-table can take some time (e.g computing the reference-table for 9K sequences takes around 15 minutes) 
+
+
 ## Running Examples   
 Basic run using default settings:   
 <code>docker run -it --rm -v $(pwd):/Data ghcr.io/garcia-nacho/wastewater:v1.1 </code>  

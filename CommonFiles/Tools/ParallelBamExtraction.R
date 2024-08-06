@@ -39,9 +39,9 @@ if(!is.na(arg[5])) memory_saver<-arg[5]
 # 1320	12470	waste011.40_Oslo	G	0,973857257	0,007451126	S:N440K
 # 1513	11999	waste016.34_Oslo	C	0,875239603	0,00759624	S:Y505H
 
-# pmatrixfile<-"/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/ProbMatrix.csv"
-# reference<-read.fasta("/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/SpikeRef.fa")
-# file.copy("/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/Tools/bam2msa","bam2msa")
+# pmatrixfile<-"/media/nacho/Data/DockerImages/HERCULES/CommonFiles/reference/ProbMatrix.csv"
+# reference<-read.fasta("/media/nacho/Data/DockerImages/HERCULES/CommonFiles/reference/SpikeRef.fa")
+# file.copy("/media/nacho/Data/DockerImages/HERCULES/CommonFiles/Tools/bam2msa","bam2msa")
 # file.copy("/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/SpikeRef.fa","SpikeRef.fa")
 # refmsa<-"/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/MSA_Refs.tsv.gz"
 # refmsaid<-"/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/MSA_RefsID.csv"
@@ -278,7 +278,7 @@ out.par.temp<-foreach(cf=1:length(compressed), .verbose=FALSE, .packages = c("da
   lineages.ohe<-as.data.frame(lineages.ohe)
   
   colnames(lineages)<-paste("P",poi,sep = "")
-  colnames(lineages.ohe)<-paste(rep(poi+1250,5)[order(rep(poi+1250,5))],c("A","T","C","G","D"),sep = "")
+  colnames(lineages.ohe)<-paste(rep(poi+n.start,5)[order(rep(poi+n.start,5))],c("A","T","C","G","D"),sep = "")
   
 
   # Pango Lineage probability calculation -----------------------------------------
@@ -333,27 +333,37 @@ total.lin.aa<-lin.ohe.short$Mut[match(total.lin, lin.ohe.short$Bin)]
 ToMakeNA<-which(is.na(pmatrix),arr.ind = TRUE)
 pmatrix[which(is.na(pmatrix), arr.ind = TRUE)]<-0
 
+#Old method
+# plinmatrix<-as.matrix(lineages.ohe) %*% as.matrix(pmatrix)
+# anti.pmatrix<-pmatrix-1
+# anti.pmatrix[ToMakeNA]<-0
+# anti.plinmatrix<-as.matrix(lineages.ohe) %*% as.matrix(anti.pmatrix)
+# plinmatrix<-plinmatrix+anti.plinmatrix
 
+#New method
 plinmatrix<-as.matrix(lineages.ohe) %*% as.matrix(pmatrix)
+#plinmatrix<-plinmatrix/(ncol(lineages.ohe)/5)
+normalizer1<-apply(  pmatrix,2,function(x) sum(x, na.rm = FALSE))
+normalizer2<-apply(  lineages.ohe,1,function(x) sum(x, na.rm = FALSE))
 
-# plinvec<-as.numeric(apply(pmatrix, 2,sum))
-# #plinmatrix2<-plinmatrix
-# for (i in 1:nrow(plinmatrix)) {
-#   plinmatrix[i,]<-as.numeric(plinmatrix[i,])/plinvec
-# }
-
-anti.pmatrix<-pmatrix-1
-
-#Deletions do not count as negative scoring factors
-anti.pmatrix[ToMakeNA]<-0
-
-anti.plinmatrix<-as.matrix(lineages.ohe) %*% as.matrix(anti.pmatrix)
-
-plinmatrix<-plinmatrix+anti.plinmatrix
+plinmatrix<-plinmatrix/(normalizer1/5)
+plinmatrix<-plinmatrix/(normalizer2/5)
+plinmatrix<-plinmatrix*2
   
   lin.index<-apply(plinmatrix, 1, function(x)which(x==max(x,na.rm = TRUE)))
   lin.max<-apply(plinmatrix, 1, function(x)max(x,na.rm = TRUE))
-  lin.tab<-unlist(lapply(lin.index, function(x) paste(colnames(plinmatrix)[x],collapse = "/")))
+  #Update on unique sequences
+  if(is.list(lin.index)){
+    lin.tab<-unlist(lapply(lin.index, function(x) paste(colnames(plinmatrix)[x],collapse = "/")))
+  }else{
+    if(is.null(nrow(lin.index))) lin.index<-as.data.frame(lin.index)
+    if(ncol(lin.index)>1){
+      lin.tab<-apply(lin.index,2,function(x) paste(colnames(plinmatrix)[x],collapse = "/")) 
+    }else{
+      lin.tab<-apply(lin.index,2,function(x) colnames(plinmatrix)[x])[,1] 
+    }
+  }
+  
   lin.tab.raw<-lin.tab
   lin.tab<-as.data.frame(table(lin.tab))
   
@@ -484,6 +494,7 @@ Dlist<-lapply(out.par, function(x)x[5][[1]])
 if(length( which(!unlist(miss)))>0) Dlist<-Dlist[-which(!unlist(miss))]
 Mutation.df<-do.call(rbind, Dlist)
 
+#Reference.b2f.tsv
 
 rm(out.par)
 
@@ -535,58 +546,6 @@ linx[[i]]<-lineages.df.ref$ID[which(lineages.df.ref$Seq==lineages.df.ref$Seq[i])
 lineages.df.ref$ID2<-unlist(lapply(linx, function(x)paste(gsub("_SQ.*","",x),collapse = "/")))
 
 
-# #Old Pangolin Assignnment
-# lineages.df$PangoSupport<-NA
-# lineages.df$PangoSupport.Count<-NA
-# lineages.df$PangoLineagesMatched<-NA
-# 
-# variant.hash<-read.csv(hasshes)
-# 
-# for (i in 1:nrow(lineages.df)) {
-#   mut.clean<-unlist(strsplit(lineages.df$Mut.aa[i], "/"))
-#   if(length(grep("X", mut.clean))>0) mut.clean<-mut.clean[-grep("X",mut.clean)]
-#   mut.clean<-paste(mut.clean,collapse = "/")
-#   
-#   if(length(which(mut.clean %in% lineages.df.ref$Mut.aa)) ){
-#     
-#     lineages.df$PangoLineagesMatched[i]<-paste(unique(lineages.df.ref$ID2[which(lineages.df.ref$Mut.aa==mut.clean)]),collapse = "/")
-#     lineages.df$PangoSupport[i]<-1
-#   }else{
-#     lin.tab<-as.data.frame(table(lineages.df.ref$ID2[which(lineages.df.ref$PangoLineage==lineages.df$PangoLineage[i])]))
-#     
-#     NA.indx<-grep("NA\\..*\\.X",lin.tab$Var1)
-#     if(length(NA.indx)>0){
-#       for (k in 1:length(NA.indx)) {
-#         lin.tab2<-as.data.frame(table(variant.hash$pangos[which(variant.hash$Lineage==as.character(lin.tab$Var1[NA.indx[k]]))]))
-#         lin.tab2$Freq<-lin.tab2$Freq*lin.tab$Freq[NA.indx[k]]
-#         lin.tab<-rbind(lin.tab,lin.tab2)
-#       }
-#       lin.tab<-lin.tab[- grep("NA\\..*\\.X",lin.tab$Var1),]
-#       lin.tab$Var1<-as.character(lin.tab$Var1)
-#       #Collapse lineages
-#       lin.tab<-aggregate(Freq~Var1,lin.tab,sum)
-#     }
-#     if(nrow(lin.tab)==1){
-#       lineages.df$PangoLineagesMatched[i]<-as.character(lin.tab$Var1[1])
-#       lineages.df$PangoSupport[i]<-1
-#       lineages.df$PangoSupport.Count[i]<-sum(lin.tab$Freq)
-#     }
-#     if(nrow(lin.tab)>1){
-#       lin.tab<-lin.tab[order(lin.tab$Freq, decreasing = TRUE),]
-#       lineages.df$PangoLineagesMatched[i]<-as.character(lin.tab$Var1[1])
-#       lineages.df$PangoSupport[i]<-lin.tab$Freq[1]/sum(lin.tab$Freq)
-#       lineages.df$PangoSupport.Count[i]<-sum(lin.tab$Freq)
-#     }
-#   }
-# }
-# 
-# 
-# if(length(which(is.na(lineages.df$PangoLineagesMatched)))>0){
-#   lineages.df$PangoLineagesMatched[which(is.na(lineages.df$PangoLineagesMatched))]<-"Unclassified"  
-# }
-
-
-
 
 # New Pangolin Assignment -------------------------------------------------
 if(length(grep("N",lineages.df.ref$Seq))>0)lineages.df.ref<-lineages.df.ref[-grep("N",lineages.df.ref$Seq),]
@@ -605,12 +564,13 @@ if(length(grep("NA\\..*\\.X", lineages.df.ref$ID2))>0){
     lineages2<- variant.temp$pangos
     lineages2<-strsplit(lineages2,"\\.")
     noe<-max(unlist(lapply(lineages2, length)))
-    
+    maxnoe<-noe
     running<-TRUE
     while(running){
       new.lineages<- unlist(lapply(lineages2, function(x) paste(x[(1:min(length(x),noe))], collapse = ".") ))  
-      if(length(unique(new.lineages))==1){
-        new.lin<-unique(new.lineages)
+      ratio<- max(table(new.lineages))/length(new.lineages)
+      if(ratio>0.9){
+        new.lin<-names(table(new.lineages)[which(table(new.lineages)==max(table(new.lineages)))])[1]
         #unique.index<-c(unique.index,which(df$hash==uniqueregions[i])[1])
         running<-FALSE
         
@@ -623,7 +583,12 @@ if(length(grep("NA\\..*\\.X", lineages.df.ref$ID2))>0){
     if(is.na(new.lin)){
       newid<-paste(variant.temp$pangos,collapse =  "/")
     }else{
-      newid<-paste(new.lin,".X",sep = "")
+      if(maxnoe==noe+1){
+        newid<-new.lin
+      }else{
+        newid<-paste(new.lin,".X",sep = "")
+      }
+      #newid<-paste(new.lin,".X",sep = "")
     }
     
     lineages.df.ref$ID2[which(lineages.df.ref$ID2==to.match[tm])]<-newid
@@ -643,12 +608,13 @@ for (i in 1:nrow(to.col.ref)) {
     
     lineages2<-strsplit(lineages2,"\\.")
     noe<-max(unlist(lapply(lineages2, length)))
-    
+    maxnoe<-noe
     running<-TRUE
     while(running){
       new.lineages<- unlist(lapply(lineages2, function(x) paste(x[(1:min(length(x),noe))], collapse = ".") ))  
-      if(length(unique(new.lineages))==1){
-        new.lin<-unique(new.lineages)
+      ratio<- max(table(new.lineages))/length(new.lineages)
+      if(ratio>0.9){
+        new.lin<-names(table(new.lineages)[which(table(new.lineages)==max(table(new.lineages)))])[1]
         #unique.index<-c(unique.index,which(df$hash==uniqueregions[i])[1])
         running<-FALSE
         
@@ -661,7 +627,12 @@ for (i in 1:nrow(to.col.ref)) {
     if(is.na(new.lin)){
       newid<-paste(variant.temp$pangos,collapse =  "/")
     }else{
-      newid<-paste(new.lin,"\\.X",sep = "")
+      if(maxnoe==noe+1){
+        newid<-new.lin
+      }else{
+        newid<-paste(new.lin,"\\.X",sep = "")
+      }
+      #newid<-paste(new.lin,"\\.X",sep = "")
     }
     to.col.ref$Lineage[i]<-paste(lineages.df.ref$ID2[which(lineages.df.ref$Mut.aa==to.col.ref$Mut.aa[i])],collapse = "/")
     if(length(unique(lineages.df.ref$ID2[which(lineages.df.ref$Mut.aa==to.col.ref$Mut.aa[i])]))==1){
@@ -703,7 +674,8 @@ for(i in 1:nrow(lineages.clean)){
   #PerfectMatch
   if(length(which(mismatch.vect==0))==1){
     lineages.clean$PangoLineagesMatched[i]<-names(ref.list)[which(mismatch.vect==0)]
-    lineages.clean$PangoMismatches[i]<-0
+    if(lineages.clean$PangoLineagesMatched[i] == "NA") lineages.clean$PangoLineagesMatched[i]<-lineages.clean$PangoLineage[i]
+    if(lineages.clean$PangoLineagesMatched[i] == "NA")lineages.clean$PangoMismatches[i]<-NA
     #DiscrepancyMatch
   }else{
     pangonames<-names(ref.list)[which(mismatch.vect==min(mismatch.vect))]
@@ -719,6 +691,8 @@ for(i in 1:nrow(lineages.clean)){
       mut.ref<-unique(unlist(ref.list[which(mismatch.vect==min(mismatch.vect))]))
       lineages.clean$PangoLineagesMatched[i]<-paste(unique(names(ref.list)[which(mismatch.vect==min(mismatch.vect))]),collapse = "/")
       lineages.clean$PangoMismatches[i]<-min(mismatch.vect)
+      if(lineages.clean$PangoLineagesMatched[i] == "NA") lineages.clean$PangoLineagesMatched[i]<-lineages.clean$PangoLineage[i]
+      if(lineages.clean$PangoLineagesMatched[i] == "NA") lineages.clean$PangoMismatches[i]<-NA
     }
     
     plus<- mut.aa[-which(mut.aa %in% mut.ref)]
@@ -764,11 +738,13 @@ if(length(lineages)>0){
     lineages2<- unique(gsub("\\.X$","",unlist(strsplit(lineages[i],"/") )))
     lineages2<-strsplit(lineages2,"\\.")
     noe<-max(unlist(lapply(lineages2, length)))
+    maxnoe<-noe
     running<-TRUE
     while(running){
       new.lineages<- unlist(lapply(lineages2, function(x) paste(x[(1:min(length(x),noe))], collapse = ".") ))  
-      if(length(unique(new.lineages))==1){
-        new.lin<-unique(new.lineages)
+      ratio<- max(table(new.lineages))/length(new.lineages)
+      if(ratio>0.9){
+        new.lin<-names(table(new.lineages)[which(table(new.lineages)==max(table(new.lineages)))])[1]
         #unique.index<-c(unique.index,which(df$hash==uniqueregions[i])[1])
         running<-FALSE
         
@@ -781,7 +757,12 @@ if(length(lineages)>0){
     if(is.na(new.lin)){
       newid<-lineages[i]
     }else{
-      newid<-paste(new.lin,".X",sep = "")
+      if(maxnoe==noe+1){
+        newid<-new.lin
+      }else{
+        newid<-paste(new.lin,".X",sep = "")
+      }
+      #newid<-paste(new.lin,".X",sep = "")
     }
     lineages.clean$PangoLineagesMatched[which(lineages.clean$PangoLineagesMatched==lineages[i])]<-newid
   }  
@@ -840,11 +821,13 @@ for (i in 1:length(recombinants)) {
     lineages2<- unique(gsub("\\.X$","",unlist(strsplit(sep.lin,"/") )))
     lineages2<-strsplit(lineages2,"\\.")
     noe<-max(unlist(lapply(lineages2, length)))
+    maxnoe<-noe
     running<-TRUE
     while(running){
       new.lineages<- unlist(lapply(lineages2, function(x) paste(x[(1:min(length(x),noe))], collapse = ".") ))  
-      if(length(unique(new.lineages))==1){
-        new.lin<-unique(new.lineages)
+      ratio<- max(table(new.lineages))/length(new.lineages)
+      if(ratio>0.9){
+        new.lin<-names(table(new.lineages)[which(table(new.lineages)==max(table(new.lineages)))])[1]
         #unique.index<-c(unique.index,which(df$hash==uniqueregions[i])[1])
         running<-FALSE
         
@@ -855,7 +838,12 @@ for (i in 1:length(recombinants)) {
       noe<-noe-1
     }
     if(!is.na(new.lin)){
-      newid<-paste(new.lin,".X",sep = "") 
+      if(maxnoe==noe+1){
+        newid<-new.lin
+      }else{
+        newid<-paste(new.lin,".X",sep = "")  
+      }
+      #newid<-paste(new.lin,".X",sep = "") 
     }else{
       newid<-recombinants[i]
     }
@@ -902,12 +890,13 @@ for (i in 1:nrow(lineages.clean)) {
     lineages2<- unique(gsub("\\.X$","",unlist(strsplit(sep.lin,"/") )))
     lineages2<-strsplit(lineages2,"\\.")
     noe<-max(unlist(lapply(lineages2, length)))
-    
+    maxnoe<-noe
     running<-TRUE
     while(running){
       new.lineages<- unlist(lapply(lineages2, function(x) paste(x[(1:min(length(x),noe))], collapse = ".") ))  
-      if(length(unique(new.lineages))==1){
-        new.lin<-unique(new.lineages)
+      ratio<- max(table(new.lineages))/length(new.lineages)
+      if(ratio>0.9){
+        new.lin<-names(table(new.lineages)[which(table(new.lineages)==max(table(new.lineages)))])[1]
         #unique.index<-c(unique.index,which(df$hash==uniqueregions[i])[1])
         running<-FALSE
         
@@ -919,7 +908,13 @@ for (i in 1:nrow(lineages.clean)) {
     }
     
     if(!is.na(new.lin)){
-      newid<-paste(new.lin,".X",sep = "")
+      if(maxnoe==noe+1){
+        newid<-new.lin
+      }else{
+        newid<-paste(new.lin,".X",sep = "")
+      }
+      
+      #newid<-paste(new.lin,".X",sep = "")
     }else{
       newid<-lineages.clean$PangoLong[i]
     }
@@ -963,7 +958,7 @@ lineages.clean$Recompressed[-grep("/",lineages.clean$PangoLineagesMatched)]<-lin
 print("Dimension reduction...")
 #umapping<-umap(as.matrix(probMtrx[which(lineages.df$Count>10),-c(which(colnames(probMtrx) %in% c("Seq","Sample")))]))
 #lineages.clean<-lineages.df[which(lineages.df$Count>10),]
-probMtrx<-rbind(probMtrx, probMtrx.ref)
+#probMtrx<-rbind(probMtrx, probMtrx.ref)
 umapping<-uwot::umap(as.matrix(probMtrx[-c(which(colnames(probMtrx) %in% c("Seq","Sample")))]))
   
 
@@ -992,10 +987,11 @@ samples.vec<-unique(lineages.clean$Sample)
 experiments<-unique(gsub("\\..*","",samples.vec))
 
 intersetors<-intersect(c(1:nrow(lineages.clean))[-grep("/",lineages.clean$PangoLineage)], which(lineages.clean$PangoLineagesMatched=="Unclassified"))
-
 #if(length(intersetors)>0) lineages.clean$PangoLineagesMatched[intersetors]<-lineages.clean$PangoLineage[intersetors]
 
 lineages.clean$Mut.aa2<-paste("Mut.aa",lineages.clean$Mut.aa,sep = ":")
+
+
 for (i in 1:length(experiments)) {
 ggpl<-  ggplot(lineages.clean[grep(experiments[i], lineages.clean$Sample),])+
     geom_point(aes(X,Y,col=Recompressed,size=Count,label=PangoDiscrepancies, text=Mut.aa2),alpha=0.3)+

@@ -64,7 +64,15 @@ RUN mkdir -p /Data /home/docker/CommonFiles
 COPY CommonFiles/ /home/docker/CommonFiles/
 RUN chmod -R +rwx /home/docker/CommonFiles/* \
     && chmod 777 /Data 
+RUN chown docker /home/docker/CommonFiles/reference/*
+RUN chmod 777 /home/docker/CommonFiles/reference/MSA_Refs.tsv.gz
+RUN chown -R docker /home/docker/CommonFiles/reference
 USER docker
+
+#source activate nextclade
+#echo "Downloading Nextclade database"
+#nextclade dataset get --name 'sars-cov-2' --output-dir '/home/docker/nc_sars-cov-2'
+#conda deactivate
 
 WORKDIR /Data
 CMD ["sh", "-c", "/home/docker/CommonFiles/WWAnalysis.sh ${qual} ${noise} ${start} ${end} ${m} ${M} ${mode} ${trim} ${poi} ${kmer} ${mem}"]

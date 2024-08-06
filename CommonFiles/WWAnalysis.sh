@@ -36,6 +36,16 @@ echo "Downloading Nextclade database"
 nextclade dataset get --name 'sars-cov-2' --output-dir '/home/docker/nc_sars-cov-2'
 conda deactivate
 
+
+if [ -d "/Reference" ]
+then
+echo "==============================="
+echo "Creating new reference matrix"
+echo "==============================="
+Rscript /home/docker/CommonFiles/Tools/ProbMatrixGeneratorHercules.R ${3} ${4}
+fi
+
+
 #Legacy
 #echo ""
 #echo "Preparing Spike References"
@@ -204,33 +214,32 @@ mv *Sankeyplot.Mutations.pdf analysis/SankeyPlots
 
 #mkdir /Data/results/analysis/Widgets 
 mv /Data/results/analysis/*.html /Data/results/analysis/Widgets
-cp /home/docker/CommonFiles/Dashboard.html /Data/results/analysis/Dashboard.html
+#cp /home/docker/CommonFiles/Dashboard.html /Data/results/analysis/Dashboard.html
 
 mkdir /Data/results/analysis/SingleMutations
 mv *SingleMutation* /Data/results/analysis/SingleMutations
 
-mv /Data/VariantSpike.fasta /Data/results/analysis/ReferencesSpike.fasta
+#mv /Data/VariantSpike.fasta /Data/results/analysis/ReferencesSpike.fasta
 #mv /Data/results/*_voc_depth.csv /Data/results/QC
 
 
-mv /Data/results/analysis/Clade_Barplot.pdf /Data/results/QC
+#mv /Data/results/analysis/Clade_Barplot.pdf /Data/results/QC
 #mv /Data/results/analysis/CountVariant_groupped_byVariant.pdf /Data/results/analysis/CountVariantMapped_byVariant.pdf
 #mv /Data/results/analysis/CountVariant_groupSample.pdf /Data/results/analysis/CountVariantMapped_bySample.pdf 
-mv /Data/results/analysis/CoverageMosaic.pdf /Data/results/QC
-mv /Data/results/analysis/NoiseMosaic.pdf /Data/results/QC
-mv /Data/results/analysis/Pangolin_Barplot.pdf /Data/results/QC
+#mv /Data/results/analysis/CoverageMosaic.pdf /Data/results/QC
+#mv /Data/results/analysis/NoiseMosaic.pdf /Data/results/QC
+#mv /Data/results/analysis/Pangolin_Barplot.pdf /Data/results/QC
 #mv /Data/results/analysis/RatioVariant_groupSample.pdf /Data/results/analysis/RatioVariantMapped_bySample.pdf
 #mv /Data/results/analysis/RatioVariant_groupVariant.pdf /Data/results/analysis/RatioVariantMapped_byVariant.pdf  
-mv /Data/results/analysis/ReferencesSpike.fasta /Data/results/QC
-mv /Data/results/analysis/Variants.nextclade /Data/results/QC
+#mv /Data/results/analysis/ReferencesSpike.fasta /Data/results/QC
+#mv /Data/results/analysis/Variants.nextclade /Data/results/QC
 #mv /Data/results/*AF.lineages.csv /Data/results/QC
-mv /Data/results/*.gz /Data/results/QC
-mv /Data/results/*read_length.txt /Data/results/QC
+#mv /Data/results/*.gz /Data/results/QC
+#mv /Data/results/*read_length.txt /Data/results/QC
 mv /Data/results/*.pdf /Data/results/analysis
 mv /Data/results/*.xlsx /Data/results/analysis
 rm /Data/results/analysis/Rplots.pdf
 rm -rf /Data/results/OldResults
-rm /Data/results/MSAFastas
 
 mkdir /Data/results/WWDB
 mv /Data/results/MSAFastas/* /Data/results/WWDB
@@ -241,14 +250,18 @@ if [[ ${10} != "0" ]]
 then
 
 cd /Data/results
-Rscript /home/docker/CommonFiles/Tools/KmerSearchDockerParallel.R ${10} 
-rm -rf kmeruncompressed
-mv ExtractedKmer analysis/KmerSearch/
+mkdir analysis/KmerSearch/
 mkdir /Data/results/sequences/KmerSeqs
-mv ExtractedKmer analysis/KmerSearch/
-mv analysis/KmerSearch/* sequences/KmerSeqs
 
-mv KmerSearchBarplot.pdf analysis/KmerSearch/KmerSearchBarplot.pdf  
-mv KmerSearchResults.xlsx analysis/KmerSearch/KmerSearchResults.xlsx  
+Rscript /home/docker/CommonFiles/Tools/KmerSearchDockerParallel.R ${10} ${3}
+rm -rf kmeruncompressed
+mv ExtractedKmer/* sequences/KmerSeqs
+mv KmerSearchPlotLog.pdf analysis/KmerSearch/KmerSearchPlotLog.pdf
+mv KmerSearchPlot.pdf analysis/KmerSearch/KmerSearchPlot.pdf
+mv KmerSearchResults.xlsx analysis/KmerSearch/KmerSearchResults.xlsx 
+mv KmerSearchMutations.xlsx analysis/KmerSearch/KmerSearchMutations.xlsx  
+mv KmerMutations* analysis/KmerSearch
+mv 
+rm -rf ExtractedKmer
 
 fi
