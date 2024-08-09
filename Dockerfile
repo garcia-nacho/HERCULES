@@ -69,10 +69,8 @@ RUN chmod 777 /home/docker/CommonFiles/reference/MSA_Refs.tsv.gz
 RUN chown -R docker /home/docker/CommonFiles/reference
 USER docker
 
-#source activate nextclade
-#echo "Downloading Nextclade database"
-#nextclade dataset get --name 'sars-cov-2' --output-dir '/home/docker/nc_sars-cov-2'
-#conda deactivate
+RUN /bin/bash -c ". activate nextclade && \
+   nextclade dataset get --name 'sars-cov-2' --output-dir '/home/docker/nc_sars-cov-2'"  
 
 WORKDIR /Data
 CMD ["sh", "-c", "/home/docker/CommonFiles/WWAnalysis.sh ${qual} ${noise} ${start} ${end} ${m} ${M} ${mode} ${trim} ${poi} ${kmer} ${mem}"]

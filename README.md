@@ -1,19 +1,20 @@
-# Wastewater SARS-CoV-2 Surveillance Pipeline
+# HERCULES
 [![Docker](https://badgen.net/badge/icon/docker?icon=docker&label)](https://https://docker.com/)
 
+High-throughput Epidemiological Reconstruction and Clustering for Uncovering Lineages from Environmental SARS-CoV-2 
+<img src="/HerculesDallE.png" width="500">  
 
-SARS-CoV-2 wastewater surveillance using Nanopore long reads. Version 1.1
 
 ## Introduction
-This pipeline aims to identify and quantify SARS-CoV-2 lineages at the read-level.   
-<img src="/Overview.png" width="700">     
-
+HERCULES is an unsupervised pipeline to detect SARS-CoV-2 mutations and lineages in wastewater using long-reads.
+Please read our paper for details about its capabilities. 
+   
 ## Installation   
 The recommended way to install and use the pipeline is by using the pre-built docker image
-<code>docker pull ghcr.io/garcia-nacho/wastewater:v1.1</code>
+<code>docker pull ghcr.io/garcia-nacho/hercules</code>
 However, you could download and edit this repo to create a custom analysis yourself: 
-<code>git clone https://github.com/garcia-nacho/Wastewater_SARS-CoV-2/ </code>  
-<code>docker build -t wastewater Wastewater_SARS-CoV-2</code>
+<code>git clone https://github.com/garcia-nacho/HERCULES </code>  
+<code>docker build -t ghcr.io/garcia-nacho/hercules HERCULES</code>
 
 ## Run   
 The pipeline accepts several parameters that are parsed to the image via the flag <code>-e parameter=value</code>
@@ -55,7 +56,7 @@ The default value is empty.
 
 **Kmer**  <code>kmer="kmer1,kmer2,kmer3</code>   
 This parameter allows you to screen for kmers in the reference and the reads. 
-The default value is empty
+The default value is empty.
 
 The pipeline expects this folder structure:   
 <pre>
@@ -91,24 +92,24 @@ If no database is provide, HERCULES will use a precomputed internal one. Dependi
 
 ## Running Examples   
 Basic run using default settings:   
-<code>docker run -it --rm -v $(pwd):/Data ghcr.io/garcia-nacho/wastewater:v1.1 </code>  
+<code>docker run -it --rm -v $(pwd):/Data ghcr.io/garcia-nacho/hercules HERCULES </code>  
    
 Read filter by a quality of 10:  
-<code>docker run -it --rm -e qual=10 -v $(pwd):/Data ghcr.io/garcia-nacho/wastewater:v1.1 </code>   
+<code>docker run -it --rm -e qual=10 -v $(pwd):/Data ghcr.io/garcia-nacho/hercules HERCULES </code>   
    
 Noise cut-off change to 0.1:       
-<code>docker run -it --rm -e noise=0.1 -v $(pwd):/Data ghcr.io/garcia-nacho/wastewater:v1.1 </code>
+<code>docker run -it --rm -e noise=0.1 -v $(pwd):/Data ghcr.io/garcia-nacho/hercules HERCULES </code>
 
 Change the read size to allow reads between 100 and 2000nt    
-<code>docker run -it --rm -e m=100 -e M=2000 -v $(pwd):/Data wastewater </code>   
+<code>docker run -it --rm -e m=100 -e M=2000 -v $(pwd):/Data ghcr.io/garcia-nacho/hercules HERCULES </code>   
 
 Look into mutations of the BA.2.86 variant and use the previous results included in the directory WWDB   
 <code>docker run -it --rm -v WWDB:/Previous -v $(pwd):/Data \ 
 -e poi='G22895C,T22896A,G22898A,A22910G,C22916T,G23012A,C23013A,T23018C,T23019C,C23271T,C23423T,A23604G' \ 
-ghcr.io/garcia-nacho/wastewater:v1.1</code>
+ghcr.io/garcia-nacho/hercules HERCULES</code>
 
 Look into a kmer specific from the BA.2.86 variant and use the previous results included in the directory WWDB   
-<code>docker run -it --rm -v WWDB:/Previous -v $(pwd):/Data -e kmer='TAAGCATAGTG' ghcr.io/garcia-nacho/wastewater:v1.1</code>
+<code>docker run -it --rm -v WWDB:/Previous -v $(pwd):/Data -e kmer='TAAGCATAGTG' ghcr.io/garcia-nacho/hercules HERCULES</code>
 
 
 ## Output   
@@ -142,3 +143,6 @@ Here you will find the files required to integrate the results into future analy
 The pipeline filters the reads according to a quality cut-off using *[seqkit](https://bioinf.shenwei.me/seqkit/)*. Reads are mapped against the reference Spike using *[minimap2](https://github.com/lh3/minimap2)* and filtered and sorted using *[samtools](http://www.htslib.org/)*. The resulting *bam* file is indexed using *[samtools](http://www.htslib.org/)*. The positions showing a mix of bases are identified using *[noisefinder](https://github.com/garcia-nacho/NoisExtractor)* and the bases connected with their read-ids are retreived using *[bbasereader](https://github.com/garcia-nacho/bbasereader)*. All positions are merged using the read-id as pivot column and the different variants are identified and saved in a fasta file. 
 The pangolin lineages are assigned using the mutations on the references and reads. If there is no discrepancy between the mutations found in a read and the mutations found in a lineage, the read is assigned to that lineage. If there are discrepancies the reads are assigned to the closer lineage and the discrepancies are displayed. If there are several lineages close enough to the read in terms of mutations, all of them are displayed (Note that not all mutations are analyzed, only those dynamically decided and those defined with the *poi* flag).
 The plots and analyses are generated in *[R](https://www.r-project.org/)* 
+
+## Citing HERCULES.   
+To be done
