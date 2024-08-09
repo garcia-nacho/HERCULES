@@ -1,10 +1,10 @@
-# HERCULES
+# HERCULES: High-throughput Epidemiological Reconstruction and Clustering for Uncovering Lineages from Environmental SARS-CoV-2
 [![Docker](https://badgen.net/badge/icon/docker?icon=docker&label)](https://https://docker.com/)
-
-High-throughput Epidemiological Reconstruction and Clustering for Uncovering Lineages from Environmental SARS-CoV-2 
+   
+  
 <img src="/HerculesDallE.png" width="500">  
 
-
+   
 ## Introduction
 HERCULES is an unsupervised pipeline to detect SARS-CoV-2 mutations and lineages in wastewater using long-reads.
 Please read our paper for details about its capabilities. 
