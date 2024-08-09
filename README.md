@@ -2,7 +2,7 @@
 [![Docker](https://badgen.net/badge/icon/docker?icon=docker&label)](https://https://docker.com/)
    
   
-<img src="/HerculesDallE.png" width="500">  
+<img src="/HerculesDallE.png" width="700">  
 
    
 ## Introduction
