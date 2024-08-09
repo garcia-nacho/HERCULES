@@ -3,7 +3,7 @@
    
   
 <img src="/HerculesDallE.png" width="700">  
-
+Source: Dall-E
    
 ## Introduction
 HERCULES is an unsupervised pipeline to detect SARS-CoV-2 mutations and lineages in wastewater using long-reads.
