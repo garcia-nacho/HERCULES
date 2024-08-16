@@ -12,7 +12,7 @@ library(htmlwidgets)
 arg=commandArgs(TRUE)
 
 compressed<-list.files(full.names = TRUE, pattern = "b2f.tsv.gz",recursive = TRUE)
-save.kmer<-FALSE
+save.kmer<-TRUE
 # ref<-read.fasta("/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/SpikeRef.fa")
 # kmers<-c("TAAGCATAGTG")
 # kmers<-c("G23048A-C23202A", "C23453T-T23018G", "C23271T-C23423T-G23222A")
@@ -93,7 +93,6 @@ for (k in 1:length(kmer)) {
   df<-as.data.frame(files)
   print(paste("Searching for ", kmername[k],sep = ""))
  
-  df$kmer<-kmer[k]
   df$kmername<-kmername[k]
   df$countQuery<-NA
   df$countRef<-NA
@@ -117,9 +116,13 @@ for (k in 1:length(kmer)) {
   gc()
   
   cores<-as.numeric(detectCores())-2
-  cores<-9
+  
   cluster.cores<-makeCluster(cores)
   registerDoSNOW(cluster.cores)
+  
+  kmersplit<-unlist(strsplit(kmername[k],"-"))
+  kmerpos<-as.numeric(gsub("^.","",gsub(".$", "",kmersplit)))
+  kmermatch<-toupper(gsub(".*[0-9]", "",kmersplit)) 
   
   out.par<-foreach(i=1:nrow(df), .verbose=FALSE, .packages = c("data.table","seqinr"), .options.snow = opts) %dopar%{
      df2<-df
@@ -130,12 +133,25 @@ for (k in 1:length(kmer)) {
      
      file.to.check$`#query_msa`<-toupper(file.to.check$`#query_msa`)
      file.to.check$ref_msa<-toupper(file.to.check$ref_msa)
-     index.query<-grep(kmer[k],file.to.check$`#query_msa`)
      
-     df2$countQuery[i]<-length(index.query)
-     df2$countRef[i]<-length(grep(kmer[k],file.to.check$ref_msa))
+     lst.tocheck<-strsplit(file.to.check$`#query_msa`,"")
+     
+     index.tab<-vector()
+     for (km in 1:length(kmermatch)) {
+       
+        kmlst<- lapply(lst.tocheck, function(x) which(x[kmerpos[km]-21563-startn+2] == kmermatch[km]))      
+        index.tab<-c(index.tab,which(unlist(lapply(kmlst, function(x) length(x) ))>0))  
+     }
+     
+     if(length(which(table(index.tab)==length(kmermatch)))>0){
+       index.query<- as.numeric(names(table(index.tab))[which(table(index.tab)==length(kmermatch))])
+       df2$countQuery[i]<-length(index.query)
+     }else{
+       df2$countQuery[i]<-0
+       index.query<-NULL
+     }
+     
      df2$RatioQuery[i]<-df2$countQuery[i]/nrow(file.to.check)
-     df2$RatioReference[i]<-df2$countRef[i]/nrow(file.to.check)
      df2$TotalReadCount<-nrow(file.to.check)
      
      mutation.vector<-vector()
@@ -176,7 +192,6 @@ for (k in 1:length(kmer)) {
        mutation.table<-mutation.table[which(mutation.table$Ratio>0.05),]  
      }
      if(nrow(mutation.table)>0){
-     mutation.table$kmer<-kmer[k]
      mutation.table$kmer<-kmername[k]
      mutation.table$File<-gsub(".*/","",df$files[i])
      mutation.table$TotalCount<-nrow(file.to.check)
@@ -184,7 +199,7 @@ for (k in 1:length(kmer)) {
        mutation.table<-as.data.frame(matrix(data = NA, nrow = 1, ncol = 5))
        colnames(mutation.table)<-c("Mutation","Count","Ratio", "kmer", "File")
        mutation.table$File<-gsub(".*/","",df$files[i])
-       mutation.table$kmer<-kmer[k]
+
        mutation.table$kmer<-kmername[k]
        mutation.table$Count<-0
        mutation.table$Ratio<-0
@@ -194,7 +209,7 @@ for (k in 1:length(kmer)) {
        mutation.table<-as.data.frame(matrix(data = NA, nrow = 1, ncol = 5))
        colnames(mutation.table)<-c("Mutation","Count","Ratio", "kmer", "File")
        mutation.table$File<-gsub(".*/","",df$files[i])
-       mutation.table$kmer<-kmer[k]
+ 
        mutation.table$kmer<-kmername[k]
        mutation.table$Count<-0
        mutation.table$Ratio<-0
