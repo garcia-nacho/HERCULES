@@ -151,6 +151,9 @@ The pipeline filters the reads according to a quality cut-off using *[seqkit](ht
 The pangolin lineages are assigned using the mutations on the references and reads. If there is no discrepancy between the mutations found in a read and the mutations found in a lineage, the read is assigned to that lineage. If there are discrepancies the reads are assigned to the closer lineage and the discrepancies are displayed. If there are several lineages close enough to the read in terms of mutations, all of them are displayed (Note that not all mutations are analyzed, only those dynamically decided and those defined with the *poi* flag).
 The plots and analyses are generated in *[R](https://www.r-project.org/)* 
 
+## Documentation
+To get a copy of the detailed documentation please checkout the [detailed description of HERCULES](/Documentation.pdf)
+
 ## Citing HERCULES.   
 If you use HERCULES please cite our [preprint:](https://www.medrxiv.org/content/10.1101/2024.08.27.24312690v1)
 **Unsupervised detection of SARS-CoV-2 mutations and lineages in Norwegian wastewater samples using long-read sequencing**   
