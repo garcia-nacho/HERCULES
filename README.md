@@ -138,7 +138,14 @@ Here you find the fasta sequences of the consensus and variants found in each sa
 
 **WWDB**
 Here you will find the files required to integrate the results into future analyses.
-     
+
+
+## Testing HERCULES   
+If you want to test HERCULES before running it on a large dataset you can use the dummy files located on the Example folder.   
+Running <code>docker run -it --rm -e noise=0.1 -v $(pwd):/Data ghcr.io/garcia-nacho/hercules</code> inside the Example folder will produce analyze the dummy dataset and it produce a new folder inside the Example folder.   
+The results obtained from the dummy dataset are stored in the Example_results folder of this repo.   
+
+
 ## Under the hood
 The pipeline filters the reads according to a quality cut-off using *[seqkit](https://bioinf.shenwei.me/seqkit/)*. Reads are mapped against the reference Spike using *[minimap2](https://github.com/lh3/minimap2)* and filtered and sorted using *[samtools](http://www.htslib.org/)*. The resulting *bam* file is indexed using *[samtools](http://www.htslib.org/)*. The positions showing a mix of bases are identified using *[noisefinder](https://github.com/garcia-nacho/NoisExtractor)* and the bases connected with their read-ids are retreived using *[bbasereader](https://github.com/garcia-nacho/bbasereader)*. All positions are merged using the read-id as pivot column and the different variants are identified and saved in a fasta file. 
 The pangolin lineages are assigned using the mutations on the references and reads. If there is no discrepancy between the mutations found in a read and the mutations found in a lineage, the read is assigned to that lineage. If there are discrepancies the reads are assigned to the closer lineage and the discrepancies are displayed. If there are several lineages close enough to the read in terms of mutations, all of them are displayed (Note that not all mutations are analyzed, only those dynamically decided and those defined with the *poi* flag).
