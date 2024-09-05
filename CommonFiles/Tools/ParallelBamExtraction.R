@@ -346,8 +346,12 @@ plinmatrix<-as.matrix(lineages.ohe) %*% as.matrix(pmatrix)
 normalizer1<-apply(  pmatrix,2,function(x) sum(x, na.rm = FALSE))
 normalizer2<-apply(  lineages.ohe,1,function(x) sum(x, na.rm = FALSE))
 
-plinmatrix<-plinmatrix/(normalizer1/5)
-plinmatrix<-plinmatrix/(normalizer2/5)
+  
+#plinmatrix<-plinmatrix/(normalizer1/5)
+#plinmatrix<-plinmatrix/(normalizer2/5)
+plinmatrix<-t(apply(as.data.frame(plinmatrix), 1, function(x)x/normalizer1))
+plinmatrix<-apply(as.data.frame(plinmatrix), 2, function(x)x/normalizer2)
+
 plinmatrix<-plinmatrix*2
   
   lin.index<-apply(plinmatrix, 1, function(x)which(x==max(x,na.rm = TRUE)))
