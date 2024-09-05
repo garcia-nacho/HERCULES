@@ -152,4 +152,7 @@ The pangolin lineages are assigned using the mutations on the references and rea
 The plots and analyses are generated in *[R](https://www.r-project.org/)* 
 
 ## Citing HERCULES.   
-To be done
+If you use HERCULES please cite our [preprint:](https://www.medrxiv.org/content/10.1101/2024.08.27.24312690v1)
+**Unsupervised detection of SARS-CoV-2 mutations and lineages in Norwegian wastewater samples using long-read sequencing**   
+Ignacio Garcia, Rasmus K. Riis, Line V. Moen, Andreas Rohringer, Elisabeth H. Madslien, Karoline Bragstad   
+medRxiv 2024.08.27.24312690; doi:https://doi.org/10.1101/2024.08.27.24312690   
