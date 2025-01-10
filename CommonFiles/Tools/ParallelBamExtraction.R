@@ -787,7 +787,7 @@ lineages.clean$Recompressed<-NA
 try(pango.vars<-read.csv("https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json", sep = ":", header = FALSE))
 
 if(nrow(pango.vars)==0){
-  try(read.csv("/home/docker/CommonFiles/reference/alias_key.json", sep = ":", header = FALSE))
+  try(pango.vars<-read.csv("/home/docker/CommonFiles/reference/alias_key.json", sep = ":", header = FALSE))
 }
 pango.vars$V1<-gsub(" ","",pango.vars$V1)
 pango.vars$V2<-gsub(" ","",pango.vars$V2)
@@ -799,6 +799,7 @@ pango.vars$V2<-gsub("\\*",".X",pango.vars$V2)
 recombinants<-pango.vars$V2[grep("\\[", pango.vars$V2)]
 recombinants<-recombinants[-grep("\\[X", recombinants)]
 recombinants<-recombinants[-grep(",X", recombinants)]
+if(length(recombinants)>0){
 for (i in 1:length(recombinants)) {
   
   pango.dummy<- unlist(strsplit(gsub("\\[","",gsub("\\]","",recombinants[i])),",") )
@@ -858,6 +859,7 @@ for (i in 1:length(recombinants)) {
   
   
 }
+  }
 
 pango.vars$V2[grep("\\[", pango.vars$V2)]<-pango.vars$V1[grep("\\[", pango.vars$V2)]
 
